@@ -50,7 +50,8 @@ class Capybara::RackTest::Browser
     end
     
     reset_cache!
-    send(method, path, attributes, env)
+    #send(method, path, attributes, env)
+    send(method, to_binary(path), to_binary( attributes ), env)
     follow_redirects!
   end
 
@@ -91,6 +92,21 @@ protected
   def build_rack_mock_session
     reset_host! unless current_host
     Rack::MockSession.new(app, URI.parse(current_host).host)
+  end
+
+  def to_binary(object)
+  	 	
+    return object unless Kernel.const_defined?(:Encoding)
+    
+    if object.respond_to?(:force_encoding)
+      object.dup.force_encoding(Encoding::ASCII_8BIT)
+    elsif object.respond_to?(:each_pair) #Hash
+      {}.tap { |x| object.each_pair {|k,v| x[to_binary(k)] = to_binary(v) } }
+    elsif object.respond_to?(:each) #Array
+      object.map{|x| to_binary(x)}
+    else  	
+      object  	 	
+    end
   end
 
   def request_path
